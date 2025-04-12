@@ -25,7 +25,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false
+}));
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -62,28 +65,43 @@ const swaggerOptions = {
 };
 
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
+
+// Base API path
+const API_BASE = '/api';
+
+// API Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK' });
+  res.status(200).json({ 
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
 });
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/sales', saleRoutes);
-app.use('/api/cash-register', cashRegisterRoutes);
-app.use('/api/invoices', invoiceRoutes);
-app.use('/api/expenses', expenseRoutes);
-app.use('/api/blog', blogRoutes);
+// Routes with base path
+app.use(`${API_BASE}/auth`, authRoutes);
+app.use(`${API_BASE}/users`, userRoutes);
+app.use(`${API_BASE}/products`, productRoutes);
+app.use(`${API_BASE}/sales`, saleRoutes);
+app.use(`${API_BASE}/cash-register`, cashRegisterRoutes);
+app.use(`${API_BASE}/invoices`, invoiceRoutes);
+app.use(`${API_BASE}/expenses`, expenseRoutes);
+app.use(`${API_BASE}/blog`, blogRoutes);
 
+// Root endpoint
 app.get('/', (req, res) => {
+  const baseUrl = process.env.VERCEL_URL ? 
+    `https://${process.env.VERCEL_URL}` : 
+    `http://localhost:${process.env.PORT || 5000}`;
+
   res.json({ 
     message: 'Welcome to Cafe Management System API',
-    docs: '/api-docs',
-    health: '/health'
+    documentation: `${baseUrl}/api-docs`,
+    health: `${baseUrl}/health`,
+    version: '1.0.0'
   });
 });
 
@@ -100,7 +118,8 @@ app.use((err, req, res, next) => {
 app.use((req, res) => {
   res.status(404).json({ 
     message: 'Route not found',
-    path: req.path
+    path: req.path,
+    method: req.method
   });
 });
 
