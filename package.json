@@ -1,11 +1,8 @@
 {
-  "name": "cafe-management-api",
+  "name": "cafe-management-server",
   "version": "1.0.0",
   "description": "Backend server for Cafe Management System",
   "main": "src/server.js",
-  "engines": {
-    "node": "18.x"
-  },
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
