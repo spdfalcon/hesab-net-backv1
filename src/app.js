@@ -18,8 +18,13 @@ const blogRoutes = require('./routes/blogRoutes');
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// CORS configuration
+app.use(cors({
+  origin: process.env.FRONTEND_URL || '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json());
@@ -36,8 +41,8 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: `http://localhost:${process.env.PORT || 5000}`,
-        description: 'Development server',
+        url: process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${process.env.PORT || 5000}`,
+        description: process.env.VERCEL_URL ? 'Production server' : 'Development server',
       },
     ],
     components: {
@@ -53,11 +58,16 @@ const swaggerOptions = {
       bearerAuth: [],
     }],
   },
-  apis: ['./src/routes/*.js'], // Path to the API routes
+  apis: ['./src/routes/*.js'],
 };
 
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK' });
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -70,13 +80,28 @@ app.use('/api/expenses', expenseRoutes);
 app.use('/api/blog', blogRoutes);
 
 app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to Cafe Management System API' });
+  res.json({ 
+    message: 'Welcome to Cafe Management System API',
+    docs: '/api-docs',
+    health: '/health'
+  });
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+  res.status(500).json({ 
+    message: 'Something went wrong!',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ 
+    message: 'Route not found',
+    path: req.path
+  });
 });
 
 module.exports = app; 
