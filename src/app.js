@@ -103,4 +103,16 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Connect to MongoDB
+if (process.env.MONGODB_URI) {
+  mongoose.connect(process.env.MONGODB_URI)
+    .then(() => {
+      console.log('Connected to MongoDB');
+    })
+    .catch((error) => {
+      console.error('MongoDB connection error:', error);
+    });
+}
+
+// Export the Express app
 module.exports = app; 
