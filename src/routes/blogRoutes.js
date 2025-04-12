@@ -155,7 +155,7 @@ router.get('/public', getPublicPosts);
  *       200:
  *         description: Blog statistics
  */
-router.get('/stats', auth, checkRole(['superadmin', 'admin', 'editor']), getBlogStats);
+router.get('/stats', auth, checkRole(['super_admin', 'admin', 'editor']), getBlogStats);
 
 /**
  * @swagger
@@ -193,7 +193,7 @@ router.get('/:slug', getPostBySlug);
  *       201:
  *         description: Blog post created successfully
  */
-router.post('/', auth, checkRole(['superadmin', 'admin', 'editor']), blogValidation, createPost);
+router.post('/', auth, checkRole(['super_admin', 'admin', 'editor']), blogValidation, createPost);
 
 /**
  * @swagger
@@ -219,7 +219,7 @@ router.post('/', auth, checkRole(['superadmin', 'admin', 'editor']), blogValidat
  *       200:
  *         description: Blog post updated successfully
  */
-router.put('/:slug', auth, checkRole(['superadmin', 'admin', 'editor']), blogValidation, updatePost);
+router.put('/:slug', auth, checkRole(['super_admin', 'admin', 'editor']), blogValidation, updatePost);
 
 /**
  * @swagger
@@ -239,7 +239,7 @@ router.put('/:slug', auth, checkRole(['superadmin', 'admin', 'editor']), blogVal
  *       200:
  *         description: Blog post deleted successfully
  */
-router.delete('/:slug', auth, checkRole(['superadmin', 'admin']), deletePost);
+router.delete('/:slug', auth, checkRole(['super_admin', 'admin']), deletePost);
 
 /**
  * @swagger
