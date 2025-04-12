@@ -18,6 +18,15 @@ const blogRoutes = require('./routes/blogRoutes');
 
 const app = express();
 
+// MongoDB Connection
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/cafe-management';
+mongoose.connect(MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('Connected to MongoDB'))
+.catch((error) => console.error('MongoDB connection error:', error));
+
 // Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || '*',
@@ -64,7 +73,10 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK' });
+  res.status(200).json({ 
+    status: 'OK',
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+  });
 });
 
 // Routes
@@ -83,7 +95,8 @@ app.get('/', (req, res) => {
     message: 'Welcome to Cafe Management System API',
     documentation: '/api-docs',
     version: '1.0.0',
-    status: 'running'
+    status: 'running',
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
   });
 });
 
@@ -95,5 +108,14 @@ app.use((err, req, res, next) => {
     error: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
+
+// Start server if not in Vercel
+if (!process.env.VERCEL_URL) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+    console.log(`Swagger documentation available at http://localhost:${PORT}/api-docs`);
+  });
+}
 
 module.exports = app; 
