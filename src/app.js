@@ -19,7 +19,10 @@ const blogRoutes = require('./routes/blogRoutes');
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || '*',
+  credentials: true
+}));
 app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json());
@@ -36,8 +39,8 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: `http://localhost:${process.env.PORT || 5000}`,
-        description: 'Development server',
+        url: process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${process.env.PORT || 5000}`,
+        description: process.env.VERCEL_URL ? 'Production server' : 'Development server',
       },
     ],
     components: {
@@ -53,11 +56,16 @@ const swaggerOptions = {
       bearerAuth: [],
     }],
   },
-  apis: ['./src/routes/*.js'], // Path to the API routes
+  apis: ['./src/routes/*.js'],
 };
 
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK' });
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -69,14 +77,23 @@ app.use('/api/invoices', invoiceRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/blog', blogRoutes);
 
+// Welcome route
 app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to Cafe Management System API' });
+  res.json({
+    message: 'Welcome to Cafe Management System API',
+    documentation: '/api-docs',
+    version: '1.0.0',
+    status: 'running'
+  });
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+  res.status(500).json({ 
+    message: 'Something went wrong!',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
 });
 
 module.exports = app; 
