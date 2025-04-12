@@ -36,8 +36,10 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: `http://localhost:${process.env.PORT || 5000}`,
-        description: 'Development server',
+        url: process.env.NODE_ENV === 'production' 
+          ? 'https://hesab-net-backv1.vercel.app'
+          : `http://localhost:${process.env.PORT || 5000}`,
+        description: process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server',
       },
     ],
     components: {
@@ -53,11 +55,16 @@ const swaggerOptions = {
       bearerAuth: [],
     }],
   },
-  apis: ['./src/routes/*.js'], // Path to the API routes
+  apis: ['./src/routes/*.js'],
 };
 
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', message: 'Server is running' });
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -69,14 +76,23 @@ app.use('/api/invoices', invoiceRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/blog', blogRoutes);
 
+// Root endpoint
 app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to Cafe Management System API' });
+  res.json({
+    message: 'Welcome to Cafe Management System API',
+    documentation: '/api-docs',
+    version: '1.0.0',
+    status: 'active'
+  });
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+  res.status(500).json({ 
+    message: 'Something went wrong!',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
 });
 
 module.exports = app; 
